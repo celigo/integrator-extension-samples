@@ -1,5 +1,6 @@
 'use strict'
 
+var util = require('util')
 var mysql = require('mysql')
 var logger = require('winston')
 
@@ -10,7 +11,7 @@ var wrappers = {
   },
 
   processMySQLPing: function (options, callback) {
-    logger.info('options', options)
+    logger.info('options', util.inspect(options, { depth: null }))
     return callback(null, {statusCode: 200})
   },
 
