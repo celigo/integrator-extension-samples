@@ -11,7 +11,7 @@ var wrappers = {
 
   processMySQLPing: function (options, callback) {
     logger.info('options', options)
-    return callback(null, {statusCode: 200)
+    return callback(null, {statusCode: 200})
   },
 
   processMySQLImport: function (options, callback) {
