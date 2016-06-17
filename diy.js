@@ -9,6 +9,11 @@ var wrappers = {
 
   },
 
+  processMySQLPing: function (options, callback) {
+    logger.info('options', options)
+    return callback(new Error('Not Implemented Yet'))
+  },
+
   processMySQLImport: function (options, callback) {
     var host, user, database, password, query
 
