@@ -1,6 +1,7 @@
 'use strict'
 
 var mysql = require('mysql')
+var logger = require('winston')
 
 var wrappers = {
 
@@ -10,6 +11,8 @@ var wrappers = {
 
   processMySQLImport: function (options, callback) {
     var host, user, database, password, query
+
+    logger.info('options', options)
 
     if (!options) {
       return callback(new Error('!options'))
