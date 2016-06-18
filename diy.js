@@ -10,49 +10,30 @@ var wrappers = {
 
   },
 
-  processMySQLPing: function (options, callback) {
-    logger.info('options', util.inspect(options, { depth: null }))
-    return callback(null, {statusCode: 200})
-  },
-
-  processMySQLImport: function (options, callback) {
-    var host, user, database, password, query
-
-    logger.info('options', options)
-
-    if (!options) {
-      return callback(new Error('!options'))
-    }
-
-    if (!options.connection || !options.connection.unEncrypted || !options.connection.encrypted) {
-      return callback(new Error('!options.connection || !options.connection.unEncrypted || !options.connection.encrypted'))
-    }
-    host = options.connection.unEncrypted.host
-    user = options.connection.unEncrypted.user
-    database = options.connection.unEncrypted.database
-    password = options.connection.encrypted.password
-
-    if (!options.configuration || !options.configuration.query) {
-      return callback(new Error('!options.configuration || !options.configuration.query'))
-    }
-    query = options.configuration.query
-
-    var connection = mysql.createConnection({
-      host: host,
-      user: user,
-      password: password,
-      database: database
-    })
-
-    if (!Array.isArray(options.postMapData) || options.postMapData.length < 1) {
-      return callback(new Error('!Array.isArray(options.postMapData) || options.postMapData.length < 1'))
-    }
-
-    connection.connect(function (err) {
+  pingMySQLConnection: function (options, callback) {
+    // getMySQLConnectionHelper will implicitly test the ability to connect,
+    // and return an error if connect fails.
+    getMySQLConnectionHelper(options, function (err, connection) {
       if (err) {
         return callback(err)
       }
-      var query = connection.query(query, options.postMapData, function (err, results) {
+      return callback(null, {statusCode: 200})
+    })
+  },
+
+  processMySQLImport: function (options, callback) {
+    if (!options.configuration || !options.configuration.query) {
+      return callback(new Error('!options.configuration || !options.configuration.query'))
+    }
+    var query = options.configuration.query
+    if (!Array.isArray(options.postMapData) || options.postMapData.length < 1) {
+      return callback(new Error('!Array.isArray(options.postMapData) || options.postMapData.length < 1'))
+    }
+    getMySQLConnectionHelper(options, function(err, connection) {
+      if (err) {
+        return callback(err)
+      }
+      var result = connection.query(query, options.postMapData, function (err, results) {
         if (err) {
           return callback(err)
         }
@@ -69,8 +50,33 @@ var wrappers = {
   }
 }
 
-function getMySQLConnection (options) {
+function getMySQLConnectionHelper (options, callback) {
+  logger.info('options', util.inspect(options, { depth: null }))
 
+  if (!options.connection || !options.connection.unEncrypted || !options.connection.encrypted) {
+    return callback(new Error('!options.connection || !options.connection.unEncrypted || !options.connection.encrypted'))
+  }
+
+  var host, user, database, password
+  host = options.connection.unEncrypted.host
+  user = options.connection.unEncrypted.user
+  database = options.connection.unEncrypted.database
+  password = options.connection.encrypted.password
+
+  var connection = mysql.createConnection({
+    host: host,
+    user: user,
+    password: password,
+    database: database
+  })
+
+  connection.connect(function (err) {
+    if (err) {
+      logger.error('connection.connect err', util.inspect(err, {depth: null}))
+      return callback(err)
+    }
+    return callback(null, connection)
+  })
 }
 
 exports.wrappers = wrappers
