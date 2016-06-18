@@ -56,14 +56,14 @@ var wrappers = {
 function getMySQLConnectionHelper (options, callback) {
   logger.info('options', util.inspect(options, { depth: null }))
 
-  if (!options.connection || !options.connection.unEncrypted || !options.connection.encrypted) {
-    return callback(new Error('!options.connection || !options.connection.unEncrypted || !options.connection.encrypted'))
+  if (!options.connection || !options.connection.unencrypted || !options.connection.encrypted) {
+    return callback(new Error('!options.connection || !options.connection.unencrypted || !options.connection.encrypted'))
   }
 
   var host, user, database, password
-  host = options.connection.unEncrypted.host
-  user = options.connection.unEncrypted.user
-  database = options.connection.unEncrypted.database
+  host = options.connection.unencrypted.host
+  user = options.connection.unencrypted.user
+  database = options.connection.unencrypted.database
   password = options.connection.encrypted.password
 
   var connection = mysql.createConnection({
