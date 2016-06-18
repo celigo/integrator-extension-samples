@@ -15,7 +15,10 @@ var wrappers = {
     // and return an error if connect fails.
     getMySQLConnectionHelper(options, function (err, connection) {
       if (err) {
-        return callback(err)
+        return callback(null, {
+          statusCode: 401,
+          errors: [{code: err.code, message: util.inspect(err, {depth: null})}]
+        })
       }
       return callback(null, {statusCode: 200})
     })
