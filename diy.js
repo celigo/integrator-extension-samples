@@ -37,6 +37,7 @@ var wrappers = {
       }
       connection.query(query, function (err, rows) {
         if (err) {
+          connection.destroy()
           return callback(err)
         }
         logger.info('rows', util.inspect(rows, {depth: null}))
@@ -59,12 +60,13 @@ var wrappers = {
     if (!Array.isArray(options.postMapData) || options.postMapData.length < 1) {
       return callback(new Error('!Array.isArray(options.postMapData) || options.postMapData.length < 1'))
     }
-    getMySQLConnectionHelper(options, function(err, connection) {
+    getMySQLConnectionHelper(options, function (err, connection) {
       if (err) {
         return callback(err)
       }
       connection.query(query, options.postMapData, function (err, results) {
         if (err) {
+          connection.destroy()
           return callback(err)
         }
         if (results.length !== options.postMapData.length) {
