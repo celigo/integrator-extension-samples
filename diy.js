@@ -31,7 +31,7 @@ var wrappers = {
       return callback(new Error('!options.configuration || !options.configuration.query'))
     }
     var query = options.configuration.query
-    getMySQLConnectionHelper(options, function(err, connection) {
+    getMySQLConnectionHelper(options, function (err, connection) {
       if (err) {
         return callback(err)
       }
@@ -48,6 +48,7 @@ var wrappers = {
           return callback(null, {data: [], lastPage: true})
         })
       })
+    })
   },
 
   processMySQLImport: function (options, callback) {
