@@ -6,10 +6,6 @@ var logger = require('winston')
 
 var wrappers = {
 
-  processExport: function (options, callback) {
-
-  },
-
   pingMySQLConnection: function (options, callback) {
     // getMySQLConnectionHelper will implicitly test the ability to connect,
     // and return an error if connect fails.
@@ -20,8 +16,38 @@ var wrappers = {
           errors: [{code: err.code, message: util.inspect(err, {depth: null})}]
         })
       }
-      return callback(null, {statusCode: 200})
+      connection.end(function (err) {
+        if (err) {
+          logger.error('connection.end', util.inspect(err, {depth: null}))
+          return callback(err)
+        }
+        return callback(null, {statusCode: 200})
+      })
     })
+  },
+
+  processMySQLExport: function (options, callback) {
+    if (!options.configuration || !options.configuration.query) {
+      return callback(new Error('!options.configuration || !options.configuration.query'))
+    }
+    var query = options.configuration.query
+    getMySQLConnectionHelper(options, function(err, connection) {
+      if (err) {
+        return callback(err)
+      }
+      connection.query(query, function (err, rows) {
+        if (err) {
+          return callback(err)
+        }
+        logger.info('rows', util.inspect(rows, {depth: null}))
+        connection.end(function (err) {
+          if (err) {
+            logger.error('connection.end', util.inspect(err, {depth: null}))
+            return callback(err)
+          }
+          return callback(null, {data: [], lastPage: true})
+        })
+      })
   },
 
   processMySQLImport: function (options, callback) {
@@ -36,7 +62,7 @@ var wrappers = {
       if (err) {
         return callback(err)
       }
-      var result = connection.query(query, options.postMapData, function (err, results) {
+      connection.query(query, options.postMapData, function (err, results) {
         if (err) {
           return callback(err)
         }
@@ -75,7 +101,7 @@ function getMySQLConnectionHelper (options, callback) {
 
   connection.connect(function (err) {
     if (err) {
-      logger.error('connection.connect err', util.inspect(err, {depth: null}))
+      logger.error('connection.connect', util.inspect(err, {depth: null}))
       return callback(err)
     }
     return callback(null, connection)
