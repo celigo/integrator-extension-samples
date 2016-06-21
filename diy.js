@@ -69,6 +69,7 @@ var wrappers = {
           connection.destroy()
           return callback(err)
         }
+        logger.info('results', util.inspect(results, { depth: null }))
         if (results.length !== options.postMapData.length) {
           return callback(new Error('results.length !== options.postMapData.length'))
         }
