@@ -131,6 +131,7 @@ var wrappers = {
 
                 query = connection.format(query,args);
                 connection.query(query, function (err, rows) {
+                    logger.info(query);
                     if (err) {
                         logger.error('connection.query', util.inspect(err, {depth: null}));
                         return cb(err);
@@ -138,6 +139,9 @@ var wrappers = {
                     var data = JSON.parse(JSON.stringify(rows));
                     var ids = [];
 
+                    _.forEach(data,function(value){
+                        ids.push(_.get(value,keyField));
+                    });
                     if(_.isEqual(type,'test') || data.length < 1){
                         return cb(null,{data: data, lastPage: true});
                     }
@@ -149,13 +153,9 @@ var wrappers = {
                         }
                         return cb(null,{data: data, lastPage: lastPage, state: state });
                     }
-
-                    _.forEach(data,function(value){
-                        ids.push(_.get(value,keyField));
-                    });
-
                     query= connection.format(typeQuery.update, [options.configuration.table, options.once.booleanField, keyField, [ids]]);
                     connection.query(query, function(err,rows){
+                        logger.info(query);
                         if (err) {
                             logger.error('connection.query', util.inspect(err, {depth: null}));
                             return cb(err);
@@ -280,6 +280,7 @@ var wrappers = {
                 return callback(err);
             }
             connection.end();
+            logger.info(results);
             callback(null,results);
         });
     }
@@ -410,9 +411,10 @@ function executeSelect(options,connection,callback){
         });
         var tempQuery = connection.format(query,args);
         connection.query(tempQuery,function(err,results) {
+            logger.info(tempQuery);
             if(err){
                 logger.error('executeSelect', util.inspect(err, {depth: null}));
-                toReturn[index] = {statusCode:err.errno , id: -1};
+                toReturn[index] = {statusCode:422 , error:[{code:err.errno, message:err.message}]};
                 return cb();
             }
             else if(results.length < 1){
@@ -425,7 +427,7 @@ function executeSelect(options,connection,callback){
                 });
             }
             else{
-                toReturn[index] = {statusCode:200, id:results[0][options.configuration.keyField]};
+                toReturn[index] = {statusCode:200, id:results[0][options.configuration.keyField], ignored:true};
                 return cb();
             }
         });
@@ -469,22 +471,23 @@ function executeUpdate(options,connection,callback){
 
         var tempQuery = connection.format(query,args);
         connection.query(tempQuery,function(err,results){
+            logger.info(tempQuery);
             if(err){
                 logger.error('executeUpdate', util.inspect(err, {depth: null}));
-                toReturn[index] = {statusCode:err.errno , id: -1};
+                toReturn[index] = {statusCode:422 , error:[{code:err.errno, message:err.message}]};
                 return cb();
             }
             if(results.affectedRows === 0){
                 if(options.configuration.importType === 'update' && options.configuration.ignoreMissingRecords === 'true'){
                     logger.error('Missing record: '+tempQuery);
-                    toReturn[index] = {statusCode:1032 , id: -1};
+                    toReturn[index] = {statusCode:422 , errors: [{code:1032, message:'Row not found: '+tempQuery }]};
                     return cb();
                 }
                 else if(options.configuration.importType === 'addUpdate'){
                     executeInsert(options,connection,[dataValue],function(err,results){
                         if(err){
                             logger.error('executeInsert', util.inspect(err, {depth: null}));
-                            toReturn[index] = {statusCode:err.errno , id: -1};
+                            toReturn[index] = {statusCode:422 , error:[{code:err.errno, message:err.message}]};
                             return cb();
                         }
                         toReturn[index]=results[0];
@@ -528,8 +531,9 @@ function executeInsert(options,connection,insertData,callback){
         args.push([record]);
         var tempQuery = connection.format(query,args);
         connection.query(tempQuery,function(err,results) {
+            logger.info(tempQuery);
             if(err){
-                toReturn[index] = {statusCode:err.errno , id: -1};
+                toReturn[index] = {statusCode:422 , error:[{code:err.errno, message:err.message}]};
                 return cb();
             }
             else {
