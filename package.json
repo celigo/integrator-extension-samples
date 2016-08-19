@@ -7,9 +7,12 @@
     "node": "0.12.x"
   },
   "dependencies": {
+    "async": "^2.0.1",
+    "integrator-extension": "0.2.0",
+    "lodash": "^4.13.1",
+    "mysql": "^2.11.1",
+    "process": "^0.11.7",
     "winston": "2.2.0",
-    "winston-daily-rotate-file": "1.0.1",
-    "express-integrator-extension": "0.1.2",
-    "mysql": "2.10.2"
+    "winston-daily-rotate-file": "1.0.1"
   }
 }
