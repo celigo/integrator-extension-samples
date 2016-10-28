@@ -6,282 +6,284 @@ var logger = require('winston')
 var _ = require('lodash')
 var async = require('async')
 
-var wrappers = {
+var obj = {
 
-  /* --------------------------------------------------------------------------
-   ** Function Name    : pingMySQLConnection
-   ** Description      : Helper function to test the db connection
-   **------------------------------------------------------------------------ */
-  pingMySQLConnection: function (options, callback) {
-    // getMySQLConnectionHelper will implicitly test the ability to connect,
-    // and return an error if connect fails.
+  wrappers: {
+    /* --------------------------------------------------------------------------
+     ** Function Name    : pingMySQLConnection
+     ** Description      : Helper function to test the db connection
+     **------------------------------------------------------------------------ */
+    pingMySQLConnection: function (options, callback) {
+      // getMySQLConnectionHelper will implicitly test the ability to connect,
+      // and return an error if connect fails.
 
-    getMySQLConnectionHelper(options, function (err, connection) {
-      if (err) {
-        return callback(null, {
-          statusCode: 401,
-          errors: [{ code: err.code, message: util.inspect(err, { depth: null }) }]
-        })
-      }
-      connection.end()
-      return callback(null, { statusCode: 200 })
-    })
-  },
-
-  /* --------------------------------------------------------------------------
-   ** Function Name    : processMySQLExport
-   ** Description      : Export the rows using one of the export type (All,
-   **                    once, delta, test). Use the below configuration sample
-   **
-   **                      {
-   **                          "table" : "TABLE_NAME",
-   **                          "size" : 2
-   **                      }
-   **
-   **                    Field is the auto incremented col signifying row count
-   **                    Size is the number of rows to be exported at a time
-   **------------------------------------------------------------------------ */
-  processMySQLExport: function (options, callback) {
-    if (!options.configuration) {
-      return callback(new Error('!options.configuration'))
-    }
-    if (_.isEmpty(options.configuration.table)) {
-      return callback(new Error('_.isEmpty(options.configuration.table)'))
-    }
-    var connection
-    async.waterfall([
-
-      function (cb) {
-        getMySQLConnectionHelper(options, function (err, conn) {
-          if (err) {
-            return cb(err)
-          }
-          connection = conn
-          return cb(null)
-        })
-      },
-
-      function (cb) {
-        getPropertyField(connection, options.configuration.table, 'auto_increment', function (err, results) {
-          if (err) {
-            return cb(err)
-          }
-          return cb(null, results)
-        })
-      },
-
-      function (keyField, cb) {
-        var args = []
-        var type = _.get(options, 'type', 'all')
-        var size = _.get(options, 'configuration.query.size', 100)
-        var startIndex = _.get(options, 'state.startIndex', 0)
-        var typeQuery = {
-          'all': ' select * from ?? where ?? > ? ',
-          'once': ' and ?? = 0 ',
-          'delta': ' and ?? > ? ',
-          'test': ' limit 1 ',
-          'suffix': ' order by ?? limit ? ',
-          'update': 'update ?? set ??=1 where ?? in ? '
-        }
-
-        var query = typeQuery.all
-        args.push(options.configuration.table)
-        args.push(keyField)
-        args.push(startIndex)
-
-        switch (type) {
-
-          case 'all':
-            query += typeQuery.suffix
-            args.push(keyField)
-            args.push(size)
-            break
-
-          case 'once':
-            if (_.isEmpty(options.once.booleanField)) {
-              return cb(new Error('_.isEmpty(options.once.booleanField)'))
-            }
-            query += typeQuery.once
-            query += typeQuery.suffix
-            args.push(options.once.booleanField)
-            args.push(keyField)
-            args.push(size)
-            break
-
-          case 'delta':
-            if (_.isEmpty(options.delta.dateField)) {
-              return cb(new Error('_.isEmpty(options.delta.dateField)'))
-            }
-            query += typeQuery.delta
-            query += typeQuery.suffix
-            args.push(options.delta.dateField)
-            args.push(new Date(options.delta.lastExecutionTime))
-            args.push(keyField)
-            args.push(size)
-            break
-
-          case 'test':
-            query += typeQuery.test
-            break
-
-          default:
-            return cb(new Error('default'))
-        }
-
-        query = connection.format(query, args)
-        connection.query(query, function (err, rows) {
-          logger.info(query)
-          if (err) {
-            logger.error('connection.query', util.inspect(err, { depth: null }))
-            return cb(err)
-          }
-          var data = JSON.parse(JSON.stringify(rows))
-          var ids = []
-
-          _.forEach(data, function (value) {
-            ids.push(_.get(value, keyField))
+      getMySQLConnectionHelper(options, function (err, connection) {
+        if (err) {
+          return callback(null, {
+            statusCode: 401,
+            errors: [{ code: err.code, message: util.inspect(err, { depth: null }) }]
           })
-          if (_.isEqual(type, 'test') || data.length < 1) {
-            return cb(null, { data: data, lastPage: true })
+        }
+        connection.end()
+        return callback(null, { statusCode: 200 })
+      })
+    },
+
+    /* --------------------------------------------------------------------------
+     ** Function Name    : processMySQLExport
+     ** Description      : Export the rows using one of the export type (All,
+     **                    once, delta, test). Use the below configuration sample
+     **
+     **                      {
+     **                          "table" : "TABLE_NAME",
+     **                          "size" : 2
+     **                      }
+     **
+     **                    Field is the auto incremented col signifying row count
+     **                    Size is the number of rows to be exported at a time
+     **------------------------------------------------------------------------ */
+    processMySQLExport: function (options, callback) {
+      if (!options.configuration) {
+        return callback(new Error('!options.configuration'))
+      }
+      if (_.isEmpty(options.configuration.table)) {
+        return callback(new Error('_.isEmpty(options.configuration.table)'))
+      }
+      var connection
+      async.waterfall([
+
+        function (cb) {
+          getMySQLConnectionHelper(options, function (err, conn) {
+            if (err) {
+              return cb(err)
+            }
+            connection = conn
+            return cb(null)
+          })
+        },
+
+        function (cb) {
+          getPropertyField(connection, options.configuration.table, 'auto_increment', function (err, results) {
+            if (err) {
+              return cb(err)
+            }
+            return cb(null, results)
+          })
+        },
+
+        function (keyField, cb) {
+          var args = []
+          var type = _.get(options, 'type', 'all')
+          var size = _.get(options, 'configuration.query.size', 100)
+          var startIndex = _.get(options, 'state.startIndex', 0)
+          var typeQuery = {
+            'all': ' select * from ?? where ?? > ? ',
+            'once': ' and ?? = 0 ',
+            'delta': ' and ?? > ? ',
+            'test': ' limit 1 ',
+            'suffix': ' order by ?? limit ? ',
+            'update': 'update ?? set ??=1 where ?? in ? '
           }
 
-          if (_.isEqual(type, 'delta') || _.isEqual(type, 'all')) {
-            var lastPage = data.length < size
-            var state = {
-              startIndex: _.last(ids)
-            }
-            return cb(null, { data: data, lastPage: lastPage, state: state })
+          var query = typeQuery.all
+          args.push(options.configuration.table)
+          args.push(keyField)
+          args.push(startIndex)
+
+          switch (type) {
+
+            case 'all':
+              query += typeQuery.suffix
+              args.push(keyField)
+              args.push(size)
+              break
+
+            case 'once':
+              if (_.isEmpty(options.once.booleanField)) {
+                return cb(new Error('_.isEmpty(options.once.booleanField)'))
+              }
+              query += typeQuery.once
+              query += typeQuery.suffix
+              args.push(options.once.booleanField)
+              args.push(keyField)
+              args.push(size)
+              break
+
+            case 'delta':
+              if (_.isEmpty(options.delta.dateField)) {
+                return cb(new Error('_.isEmpty(options.delta.dateField)'))
+              }
+              query += typeQuery.delta
+              query += typeQuery.suffix
+              args.push(options.delta.dateField)
+              args.push(new Date(options.delta.lastExecutionTime))
+              args.push(keyField)
+              args.push(size)
+              break
+
+            case 'test':
+              query += typeQuery.test
+              break
+
+            default:
+              return cb(new Error('default'))
           }
-          query = connection.format(typeQuery.update, [options.configuration.table, options.once.booleanField, keyField, [ids]])
+
+          query = connection.format(query, args)
           connection.query(query, function (err, rows) {
             logger.info(query)
             if (err) {
               logger.error('connection.query', util.inspect(err, { depth: null }))
               return cb(err)
             }
-            if (rows.changedRows !== ids.length) {
-              return cb(new Error('rows.changedRows !== ids.length'))
+            var data = JSON.parse(JSON.stringify(rows))
+            var ids = []
+
+            _.forEach(data, function (value) {
+              ids.push(_.get(value, keyField))
+            })
+            if (_.isEqual(type, 'test') || data.length < 1) {
+              return cb(null, { data: data, lastPage: true })
             }
 
-            var lastPage = ids.length < size
-            var state = {
-              startIndex: _.last(ids)
+            if (_.isEqual(type, 'delta') || _.isEqual(type, 'all')) {
+              var lastPage = data.length < size
+              var state = {
+                startIndex: _.last(ids)
+              }
+              return cb(null, { data: data, lastPage: lastPage, state: state })
             }
-            return cb(null, { data: data, lastPage: lastPage, state: state })
+            query = connection.format(typeQuery.update, [options.configuration.table, options.once.booleanField, keyField, [ids]])
+            connection.query(query, function (err, rows) {
+              logger.info(query)
+              if (err) {
+                logger.error('connection.query', util.inspect(err, { depth: null }))
+                return cb(err)
+              }
+              if (rows.changedRows !== ids.length) {
+                return cb(new Error('rows.changedRows !== ids.length'))
+              }
+
+              var lastPage = ids.length < size
+              var state = {
+                startIndex: _.last(ids)
+              }
+              return cb(null, { data: data, lastPage: lastPage, state: state })
+            })
           })
-        })
-      }
-    ], function (err, results) {
-      if (err) {
-        if (connection) {
-          connection.destroy()
         }
-        logger.error('processMySQLExport', util.inspect(err, { depth: null }))
-        return callback(err)
-      }
-      connection.end()
-      return callback(null, results)
-    })
-  },
-
-  /* --------------------------------------------------------------------------
-   ** Function Name    : processMySQLImport
-   ** Description      : Import the rows to the db. The supported operations
-   **                    are ADD, UPDATE, ADDUPDATE. Below is the sample
-   **                    configuration
-   **
-   **      {
-   **          "importType" : "add",
-   **          "table" : "TABLE_NAME",
-   **          "ignoreExistingRecords" : "false",
-   **          "ignoreMissingRecords" : "false",
-   **          "existingRecCondition" : {
-   **              "condition" : " COL_A = ? and COL_B = ? ",
-   **              "colField" : ["COL_C","COL_D"]
-   **          }
-   **      }
-   **
-   **      TABLE_NAME is the table on which the import is performed
-   **
-   **      ignoreExistingRecords(for ADD) when set to false will try to
-   **          insert the rows without checking the existing records.
-   **
-   **      ignoreMissingRecords(for UPDATE) when set to false will not throw
-   **          any error when the record to be updated is missing.
-   **
-   **      existingRecCondition should be configured for all kind of operations
-   **          except that of pure INSERT i.e. importType is "ADD" and
-   **          ignoreExistingRecords is "true"
-   **
-   **      condition is used for checking existing records and updating
-   **          records. The condition needs to be written in MySql syntax
-   **          where COL_A, COL_B represent table columns of import table.
-   **
-   **      colField COL_C, COL_D are the table columns against which COL_A, COL_B
-   **          needs to be checked.
-   **
-   **      NOTE: Make sure that for all the operations of type ADD, UPDATE,
-   **            ADDUPDATE, EXTERNAL_ID of source table is mapped to the
-   **            auto_increment key field of destination table.
-   **
-   **------------------------------------------------------------------------ */
-  processMySQLImport: function (options, callback) {
-    if (!options.configuration || !options.configuration.importType) {
-      return callback(new Error('!options.configuration || !options.configuration.importType'))
-    }
-    if (!options.configuration.table) {
-      return callback(new Error('!options.configuration.table'))
-    }
-    if (!Array.isArray(options.postMapData) || options.postMapData.length < 1) {
-      return callback(new Error('!Array.isArray(options.postMapData) || options.postMapData.length < 1'))
-    }
-
-    var importType = options.configuration.importType
-
-    if (!(importType === 'add' || importType === 'update' || importType === 'addUpdate')) {
-      return callback(new Error('Invalid import type'))
-    }
-
-    var connection
-
-    async.waterfall([
-      function (cb) {
-        getMySQLConnectionHelper(options, function (err, conn) {
-          if (err) {
-            return cb(err)
+      ], function (err, results) {
+        if (err) {
+          if (connection) {
+            connection.destroy()
           }
-          connection = conn
-          return cb(null)
-        })
-      },
-
-      function (cb) {
-        getPropertyField(connection, options.configuration.table, 'auto_increment', function (err, results) {
-          if (err) {
-            return cb(err)
-          }
-          if (!_.includes(Object.keys(options.postMapData[0]), results)) {
-            return cb(new Error('Key field missing in mapping'))
-          }
-          options.configuration.keyField = results
-          return cb(null)
-        })
-      },
-
-      function (cb) {
-        executeImportType(options, connection, cb)
-      }
-    ], function (err, results) {
-      if (err) {
-        if (connection) {
-          connection.destroy()
+          logger.error('processMySQLExport', util.inspect(err, { depth: null }))
+          return callback(err)
         }
-        return callback(err)
+        connection.end()
+        return callback(null, results)
+      })
+    },
+
+    /* --------------------------------------------------------------------------
+     ** Function Name    : processMySQLImport
+     ** Description      : Import the rows to the db. The supported operations
+     **                    are ADD, UPDATE, ADDUPDATE. Below is the sample
+     **                    configuration
+     **
+     **      {
+     **          "importType" : "add",
+     **          "table" : "TABLE_NAME",
+     **          "ignoreExistingRecords" : "false",
+     **          "ignoreMissingRecords" : "false",
+     **          "existingRecCondition" : {
+     **              "condition" : " COL_A = ? and COL_B = ? ",
+     **              "colField" : ["COL_C","COL_D"]
+     **          }
+     **      }
+     **
+     **      TABLE_NAME is the table on which the import is performed
+     **
+     **      ignoreExistingRecords(for ADD) when set to false will try to
+     **          insert the rows without checking the existing records.
+     **
+     **      ignoreMissingRecords(for UPDATE) when set to false will not throw
+     **          any error when the record to be updated is missing.
+     **
+     **      existingRecCondition should be configured for all kind of operations
+     **          except that of pure INSERT i.e. importType is "ADD" and
+     **          ignoreExistingRecords is "true"
+     **
+     **      condition is used for checking existing records and updating
+     **          records. The condition needs to be written in MySql syntax
+     **          where COL_A, COL_B represent table columns of import table.
+     **
+     **      colField COL_C, COL_D are the table columns against which COL_A, COL_B
+     **          needs to be checked.
+     **
+     **      NOTE: Make sure that for all the operations of type ADD, UPDATE,
+     **            ADDUPDATE, EXTERNAL_ID of source table is mapped to the
+     **            auto_increment key field of destination table.
+     **
+     **------------------------------------------------------------------------ */
+    processMySQLImport: function (options, callback) {
+      if (!options.configuration || !options.configuration.importType) {
+        return callback(new Error('!options.configuration || !options.configuration.importType'))
       }
-      connection.end()
-      logger.info(results)
-      callback(null, results)
-    })
+      if (!options.configuration.table) {
+        return callback(new Error('!options.configuration.table'))
+      }
+      if (!Array.isArray(options.postMapData) || options.postMapData.length < 1) {
+        return callback(new Error('!Array.isArray(options.postMapData) || options.postMapData.length < 1'))
+      }
+
+      var importType = options.configuration.importType
+
+      if (!(importType === 'add' || importType === 'update' || importType === 'addUpdate')) {
+        return callback(new Error('Invalid import type'))
+      }
+
+      var connection
+
+      async.waterfall([
+        function (cb) {
+          getMySQLConnectionHelper(options, function (err, conn) {
+            if (err) {
+              return cb(err)
+            }
+            connection = conn
+            return cb(null)
+          })
+        },
+
+        function (cb) {
+          getPropertyField(connection, options.configuration.table, 'auto_increment', function (err, results) {
+            if (err) {
+              return cb(err)
+            }
+            if (!_.includes(Object.keys(options.postMapData[0]), results)) {
+              return cb(new Error('Key field missing in mapping'))
+            }
+            options.configuration.keyField = results
+            return cb(null)
+          })
+        },
+
+        function (cb) {
+          executeImportType(options, connection, cb)
+        }
+      ], function (err, results) {
+        if (err) {
+          if (connection) {
+            connection.destroy()
+          }
+          return callback(err)
+        }
+        connection.end()
+        logger.info(results)
+        callback(null, results)
+      })
+    }
   }
 }
 
@@ -595,4 +597,4 @@ function getPropertyField (connection, table, property, callback) {
   })
 }
 
-exports.wrappers = wrappers
+module.exports = obj
