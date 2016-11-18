@@ -7,13 +7,13 @@
     "node": "0.12.x"
   },
   "dependencies": {
-    "async": "^2.0.1",
+    "async": "^2.1.2",
+    "express-integrator-extension": "^0.2.0",
     "lambda-integrator-extension": "^0.1.1",
-    "lodash": "^4.13.1",
-    "mysql": "^2.11.1",
-    "process": "^0.11.7",
-    "request": "^2.75.0",
-    "winston": "2.2.0",
-    "winston-daily-rotate-file": "1.0.1"
+    "lodash": "^4.17.2",
+    "mysql": "^2.12.0",
+    "process": "^0.11.9",
+    "request": "^2.78.0",
+    "winston": "^2.2.0"
   }
 }

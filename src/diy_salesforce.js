@@ -4,8 +4,7 @@ var logger = require('winston')
 var async = require('async')
 var request = require('request')
 
-// var HERCULES_URL = 'https://api.integrator.io'
-var HERCULES_URL = 'https://api.staging.integrator.io'
+var HERCULES_URL = 'https://api.integrator.io'
 
 var obj = {
 
