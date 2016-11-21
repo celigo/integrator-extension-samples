@@ -8,6 +8,8 @@ _**Note**: In order to use these integrations, the user should know how to [crea
 Currently we have below integrations available for user reference:
 
 * [MySQL](##mysql)
+* [Netsuite](##netsuite)
+* [Salesforce](##salesforce)
 
 ## MySQL
 
@@ -49,6 +51,196 @@ Along with the standard import options provided by [integrator.io](http://www.ce
 
 _**Note**: Make sure that for all the operations of type ADD, UPDATE and ADDUPDATE, the EXTERNAL_ID of source table is mapped to the auto_increment key field of destination table._
 
----
+## Netsuite
+
+Netsuite integration enables a user to import/export the attachments along with the record. This is done using the hooks functionality provided by [integrator.io](http://www.celigo.com/ipaas-integration-platform/) and netsuite nlapi's.
+
+#### Export
+
+In order to export attachment along with the record, a blob key needs to be generated for the attachment. This key is then sent along with the record. A sample blob key generation request looks like below.
+
+```json
+{
+  "url" : "https://api.integrator.io/v1/connections/" + _connectionId + "/export",
+  "method" : "POST",
+  "headers" : {
+    "content-Type" : "application/json"
+  },
+  "auth" : {
+    "bearer" : bearerToken
+  },
+  "json" : {
+    "export" : {
+      "type" : "blob",
+      "netsuite" : {
+        "internalId" : internalId
+      }
+    }
+  }
+}
+```
+* **__connectionId_**: netsuite connectionId used for the export.
+* **_bearerToken_**: one time token provided in the hook options.
+* **_internalId_**: attachment internalId in netsuite.
+
+Upon successful completion the response should contain blob key and other netsuite data.
+
+```json
+{
+  blobKey : 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  netsuite : {...}
+}
+```
+The blob key received in the response could then be used to import the file on other systems.
+
+#### Import
+
+In order to import the attachment on netsuite the record should contain the blob key for the attachment. Below is the sample request to import the data.
+
+```json
+{
+  "url" : "https://api.integrator.io/v1/connections/" + _connectionId + "/import",
+  "method" : "POST",
+  "headers" : {
+    "content-Type" : "application/json"
+  },
+  "auth" : {
+    "bearer" : bearerToken
+  },
+  "json" : {
+    "import" : {
+      "blobKey" : blobKey,
+      "netsuite" : {
+        "operation" : operation,
+        "file" : {
+          "name" : fileName,
+          "fileType" : "_PLAINTEXT",
+          "folder" : folderInternalId,
+          "internalId" : fileInternalId
+        }
+      }
+    },
+    "data" : {}
+  }
+}
+```
+* **__connectionId_**: netsuite connectionId used for the import.
+* **_bearerToken_**: one time token provided in the hook options.
+* **_operation_**: add,update or addupdate. "addupdate" is just a convenience based on whether internalId is present.
+* **_name_**: file name, including extension name(usually .pdf).
+* **_fileType_**: all NS file types from wsdl, optional, recommended to unset when "name" includes extension name.
+* **_folder_**: internalId for the folder.
+* **_internalId_**: internalId for the file, should not be used with operation "add", required with "update", optional with "addupdate".
+
+Upon successful import on netsuite the response should be in below format
+
+```json
+{
+  netsuite : {
+    isSuccess : true,
+    id : attachmentInternalId
+  }
+}
+```
+
+## Salesforce
+
+Salesforce integration enables user to export/import record along with the attachment.
+
+#### Export
+
+In order to export attachment along with the record, a blob key needs to be generated for the attachment. This key is then sent along with the record. A sample blob key generation request looks like below.
+
+```json
+{
+  "url" : "https://api.integrator.io/v1/connections/" + _connectionId + "/export",
+  "method" : "POST",
+  "headers" : {
+    "content-Type" : "application/json"
+  },
+  "auth" : {
+    "bearer" : bearerToken
+  },
+  "json" : {
+    "export" : {
+      "type" : "blob",
+      "salesforce" : {
+        "sObjectType" : "Attachment",
+        "id" : attachmentId
+      }
+    }
+  }
+}
+
+```
+* **__connectionId_**: salesforce connectionId used for the export.
+* **_bearerToken_**: one time token provided in the hook options.
+* **id**: attachment id in salesforce.
+
+Upon successful completion the response should contain blob key and other salesforce data.
+
+```json
+{
+  blobKey : 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  salesforce : {...}
+}
+```
+The blob key received in the response could then be used to import the file on other systems.
+
+#### Import
+
+In order to import the attachment on salesforce the record should contain the blob key for the attachment. Below is the sample request to import the data.
+
+```json
+{
+  "url" : "https://api.integrator.io/v1/connections/" + _connectionId + "/import",
+  "method" : "POST",
+  "headers" : {
+    "content-Type" : "application/json"
+  },
+  "auth" : {
+    "bearer" : bearerToken
+  },
+  "json" : {
+    "import" : {
+      "blobKey" : blobKey,
+      "salesforce" : {
+        "operation" : operation,
+        "sObjectType" : "attachment",
+        "attachment" : {
+          "id" : salesforceId,
+          "name" : name,
+          "parentId" : parentId,
+          "contentType" : "application/pdf",
+          "isprivate" : true,
+          "description" : description
+        }
+      }
+    },
+    "data" : {}
+  }
+}
+```
+* **__connectionId_**: salesforce connectionId used for the import.
+* **_bearerToken_**: one time token provided in the hook options.
+* **_operation_**: insert, update.
+* **_id_**: salesforce id of file. Required only for update.
+* **_name_**: file name, including extension name(usually .pdf). Required only for insert.
+* **_parentId_**: salesforce id of the parent record. Required only for insert.
+* **_contentType_**: MIME types, optional.
+* **_isprivate_**: boolean value, optional.
+* **_description_**: optional description.
+
+Upon successful import on salesforce the response should be in below format
+
+```json
+{
+  salesforce : {
+    success : true,
+    id : attachmentId
+  }
+}
+```
+
 ## Contact
 _If you need the sample integrations or any assistance please drop a mail to celigo-labs@celigo.com._
