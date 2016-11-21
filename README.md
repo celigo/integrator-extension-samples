@@ -7,9 +7,9 @@ _**Note**: In order to use these integrations, the user should know how to [crea
 
 Currently we have below integrations available for user reference:
 
-* [MySQL](##mysql)
-* [Netsuite](##netsuite)
-* [Salesforce](##salesforce)
+* [MySQL](#mysql)
+* [Netsuite](#netsuite)
+* [Salesforce](#salesforce)
 
 ## MySQL
 
@@ -18,7 +18,7 @@ The MySQL integration enables a user to import/export data between a MySQL appli
 #### Export
 Other then the standard configuration options provided in the export UI, the user can also make use of configuration box to set/create the fields as per requirements. The existing integration has support for below options.
 
-```json
+```sh
 {
   "table": "TABLE_NAME",
   "size": 2
@@ -29,7 +29,7 @@ Other then the standard configuration options provided in the export UI, the use
 
 #### Import
 Along with the standard import options provided by [integrator.io](http://www.celigo.com/ipaas-integration-platform/), below options are available to the user to set as per the requirements. The user can expand the functionality by creating new fields.
-```json
+```sh
 {
   "importType": "add",
   "table": "TABLE_NAME",
@@ -59,7 +59,7 @@ Netsuite integration enables a user to import/export the attachments along with 
 
 In order to export attachment along with the record, a blob key needs to be generated for the attachment. This key is then sent along with the record. A sample blob key generation request looks like below.
 
-```json
+```sh
 {
   "url" : "https://api.integrator.io/v1/connections/" + _connectionId + "/export",
   "method" : "POST",
@@ -85,10 +85,10 @@ In order to export attachment along with the record, a blob key needs to be gene
 
 Upon successful completion the response should contain blob key and other netsuite data.
 
-```json
+```sh
 {
-  blobKey : 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  netsuite : {...}
+  "blobKey" : "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "netsuite" : {...}
 }
 ```
 The blob key received in the response could then be used to import the file on other systems.
@@ -97,7 +97,7 @@ The blob key received in the response could then be used to import the file on o
 
 In order to import the attachment on netsuite the record should contain the blob key for the attachment. Below is the sample request to import the data.
 
-```json
+```sh
 {
   "url" : "https://api.integrator.io/v1/connections/" + _connectionId + "/import",
   "method" : "POST",
@@ -134,11 +134,11 @@ In order to import the attachment on netsuite the record should contain the blob
 
 Upon successful import on netsuite the response should be in below format
 
-```json
+```sh
 {
-  netsuite : {
-    isSuccess : true,
-    id : attachmentInternalId
+  "netsuite" : {
+    "isSuccess" : true,
+    "id" : attachmentInternalId
   }
 }
 ```
@@ -151,7 +151,7 @@ Salesforce integration enables user to export/import record along with the attac
 
 In order to export attachment along with the record, a blob key needs to be generated for the attachment. This key is then sent along with the record. A sample blob key generation request looks like below.
 
-```json
+```sh
 {
   "url" : "https://api.integrator.io/v1/connections/" + _connectionId + "/export",
   "method" : "POST",
@@ -179,10 +179,10 @@ In order to export attachment along with the record, a blob key needs to be gene
 
 Upon successful completion the response should contain blob key and other salesforce data.
 
-```json
+```sh
 {
-  blobKey : 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  salesforce : {...}
+  "blobKey" : "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "salesforce" : {...}
 }
 ```
 The blob key received in the response could then be used to import the file on other systems.
@@ -191,7 +191,7 @@ The blob key received in the response could then be used to import the file on o
 
 In order to import the attachment on salesforce the record should contain the blob key for the attachment. Below is the sample request to import the data.
 
-```json
+```sh
 {
   "url" : "https://api.integrator.io/v1/connections/" + _connectionId + "/import",
   "method" : "POST",
@@ -233,11 +233,11 @@ In order to import the attachment on salesforce the record should contain the bl
 
 Upon successful import on salesforce the response should be in below format
 
-```json
+```sh
 {
-  salesforce : {
-    success : true,
-    id : attachmentId
+  "salesforce" : {
+    "success" : true,
+    "id" : attachmentId
   }
 }
 ```
